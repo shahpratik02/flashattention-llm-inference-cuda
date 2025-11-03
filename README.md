@@ -140,6 +140,8 @@ Once you have completed your implementation, please read through the test code i
 python -m task1.test
 ```
 
+---
+
 ### Task 2 (3 pts)
 
 In this task, you will implement a naive self-attention operation using a combination of PyTorch and your own custom **CUDA kernels**.
@@ -200,6 +202,8 @@ python -m task2.test --attention
 
 **Note:** This CUDA implementation in Task 2 still involves multiple separate kernel calls (GEMM, scale/mask, softmax, GEMM). Because each kernel launch has overhead, we are not expecting to see significant performance benefits over PyTorch just yet.
 
+---
+
 ### Task 3 (3 pts)
 
 Now, you will implement the **FlashAttention 2** algorithm in PyTorch. This task is similar in spirit to Task 1 (as it's a PyTorch-only implementation), but the logic is significantly more complex. Your goal here is to understand and implement the attention operation in a **tiled manner**, which is the key to its efficiency.
@@ -229,6 +233,8 @@ python -m task3.test
 
 Here is the polished "Task 4" section, formatted as requested:
 
+---
+
 ### Task 4 (4 pts)
 
 This is the final and most important task. You will now implement the full **FlashAttention** algorithm in PyTorch + CUDA.
@@ -254,6 +260,8 @@ python -m task4.test
 The test code will verify the correctness of your output and then compare the performance of your custom FlashAttention kernel against the naive `torch.nn.MultiheadAttention` implementation.
 
 **Reporting Your Results**: The score for this project will be based on the performance difference you achieve. **You must report the 4 speedup numbers** from the test script in the `Results.md` file.
+
+---
 
 ### Task 5 (4 pts)
 
@@ -313,6 +321,8 @@ python -m task5.test
 
 The test script will compare the performance of your decode kernel. **Please report the speedup numbers in `Results.md`**.
 
+---
+
 ### Task 6 (3 pts)
 
 This final task brings all your work together. You will now implement an **end-to-end LLM inference pipeline** on a dummy LLM.
@@ -339,6 +349,8 @@ This test will measure two key performance metrics:
   * **TBT (Time Between Tokens):** This measures the average performance of your **decode kernel (Task 5)** over many steps.
 
 **Please report the final TTFT and TBT times in `Results.md`**.
+
+---
 
 ### Task 7 (1 pts)
 
