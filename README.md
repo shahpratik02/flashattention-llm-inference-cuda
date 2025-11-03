@@ -216,10 +216,10 @@ If you trace through Algorithm 1 and carefully track the intermediate values and
 >
 > There is a well-known typo in Algorithm 1 of the original paper. Please refer to [this GitHub issue](https://github.com/Dao-AILab/flash-attention/issues/991) for the correction.
 
-**Tips for PyTorch Implementation:** The notation $\operatorname{diag}(v)A$ on lines 10 and 12 may seem confusing to implement. This represents a diagonal matrix (formed from vector $v$) multiplied by a dense matrix $A$. However, if you think about it closely, this is simply an element-wise multiplication per row. This is very easy to implement in PyTorch using broadcasting.
+**Tips for PyTorch Implementation:** The notation $\mathrm{diag}(v)A$ on lines 10 and 12 may seem confusing to implement. This represents a diagonal matrix (formed from vector $v$) multiplied by a dense matrix $A$. However, if you think about it closely, this is simply an element-wise multiplication per row. This is very easy to implement in PyTorch using broadcasting.
 
-  * For $\operatorname{diag}(v)A$, you can use: `A * v.unsqueeze(-1)`
-  * Similarly, for $\operatorname{diag}(v)^{-1}A$, you can use: `A / v.unsqueeze(-1)`
+  * For $\mathrm{diag}(v)A$, you can use: `A * v.unsqueeze(-1)`
+  * Similarly, for $\mathrm{diag}(v)^{-1}A$, you can use: `A / v.unsqueeze(-1)`
 
 To test the functionality of your implementation, run the following command:
 
