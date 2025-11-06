@@ -98,7 +98,7 @@ uv venv --python 3.12
 source .venv/bin/activate
 
 # Install the required libraries 
-uv pip install torch numpy transformers
+uv pip install --no-cache-dir torch numpy transformers
 ```
 
 ### 4. At later PACE logins
