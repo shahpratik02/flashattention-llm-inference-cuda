@@ -321,6 +321,10 @@ python -m task5.test
 
 The test script will compare the performance of your decode kernel. **Please report the speedup numbers in `Results.md`**.
 
+**(Optional) Optimizing the Decode Kernel**
+
+Explore performance improvements to the decode stage by implementing a chunked FlashAttention kernel, as described in Stanford CRFM’s FlashDecoding article￼[link](https://crfm.stanford.edu/2023/10/12/flashdecoding.html). Compare its performance against the baseline decode kernel to quantify potential speedups.
+
 ---
 
 ### Task 6 (3 pts)
