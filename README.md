@@ -69,10 +69,28 @@ Follow these instructions to set up the project environment, especially if you a
 
 ### 1. Cloning this repo
 
-When cloning this repository on the **ICE cluster**, it is critical to use your scratch directory.
+**Important: Use Scratch Directory on ICE Cluster**
+
+When cloning this repository on the ICE cluster, make sure to work inside your scratch directory. Your home directory has only 30 GB of storage, while scratch provides up to 300 GB.
+
+You can check your scratch path by running:
 
 ```bash
-cd ~/scratch/
+pace-quota
+```
+
+on any ICE node.
+
+To simplify future access, consider creating a symlink from your home directory to your scratch directory:
+
+```
+ln -s /path/to/your/scratch ~/scratch
+```
+
+This ensures you always work within the larger storage space and avoid exceeding your home directory limit. Once this setup is done, please clone this repo and start working on this project. 
+
+```bash
+cd <path to your scratch directory>
 git clone <URL_TO_THIS_REPO>
 ```
 
