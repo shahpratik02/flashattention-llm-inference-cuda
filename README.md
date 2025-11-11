@@ -67,6 +67,20 @@ Here is the polished "Setup" section:
 
 Follow these instructions to set up the project environment, especially if you are working on the ICE cluster.
 
+### 0. Allocate GPU Resources
+
+First, allocate an interactive session.
+
+**From the command line (via SSH):**
+A typical allocation request for one H100 GPU, 8 CPUs, and 128GB of memory for 4 hours looks like this:
+
+```bash
+salloc --gres=gpu:h100 --cpus-per-task=8 --mem=128G --time=4:00:00
+```
+
+**From the web:**
+Alternatively, you can use the Open OnDemand website to request GPU allocation.
+
 ### 1. Cloning this repo
 
 **Important: Use Scratch Directory on ICE Cluster**
