@@ -41,8 +41,8 @@ def main(causal=False):
         assert torch.allclose(torch_out, custom_out, atol=1e-6)
 
 def test():
-    assert main()
-    assert main(causal=True)
+    main()
+    main(causal=True)
 
     print("All tests passed!")
 
