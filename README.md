@@ -242,11 +242,15 @@ Now, you will implement the **FlashAttention 2** algorithm in PyTorch. This task
 
 Your implementation must follow **Algorithm 1** from the paper "[FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning](https://arxiv.org/abs/2307.08691)" by Tri Dao.
 
-I strongly suggest you first read the original [FlashAttention-1 paper](https://arxiv.org/abs/2205.14135). This will help you understand *why* this tiled approach, which avoids materializing the massive intermediate $N \times N$ matrices in global memory, is so much faster than the naive PyTorch implementation from Task 1 that requires multiple separate kernel calls.
+Here are a few notes about the Algorithm:
 
-You will be implementing the **forward pass** only, so you can safely ignore the $L$ (log-sum-exp) statistic in Algorithm 1, which is primarily saved for the backward pass.
+  * I strongly suggest you first read the original [FlashAttention-1 paper](https://arxiv.org/abs/2205.14135). This will help you understand *why* this tiled approach, which avoids materializing the massive intermediate $N \times N$ matrices in global memory, is so much faster than the naive PyTorch implementation from Task 1 that requires multiple separate kernel calls.
 
-If you trace through Algorithm 1 and carefully track the intermediate values and their tensor dimensions, you should be able to implement the logic in Python without too much difficulty.
+  * You will be implementing the **forward pass** only, so you can safely ignore the $L$ (log-sum-exp) statistic in Algorithm 1, which is primarily saved for the backward pass.
+
+  * If you trace through Algorithm 1 and carefully track the intermediate values and their tensor dimensions, you should be able to implement the logic in Python without too much difficulty.
+
+  * Be sure to include scaling by the head dimension (divide by $\sqrt{d}$) after computing $QK^T$, as this step is omitted in the paper.
 
 > **Important Typo in Paper\!**
 >
