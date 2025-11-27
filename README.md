@@ -62,7 +62,6 @@ $$
 $$
 
 It is important to note that while this architecture is "Multi-head," all $h$ heads can be computed efficiently in parallel within a single, large batched matrix multiplication (BMM), which is key to its performance on GPUs.
-Here is the polished "Setup" section:
 
 ## Setup
 
@@ -263,8 +262,6 @@ To test the functionality of your implementation, run the following command:
 ```bash
 python -m task3.test
 ```
-
-Here is the polished "Task 4" section, formatted as requested:
 
 ---
 
