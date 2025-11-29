@@ -252,6 +252,8 @@ Here are a few notes about the Algorithm:
 
   * Be sure to include scaling by the head dimension (divide by $\sqrt{d}$) after computing $QK^T$, as this step is omitted in the paper.
 
+  * The Python version of FlashAttention2 mirrors the algorithmic structure of the CUDA kernel, including **an outer loop over each head and two inner loops over Q and KV tiles**. In CUDA, this outer loop is parallelized across thread blocks, but in Python, it must run sequentially. This implementation is intentionally not optimized for speed; it may even run slower than naive attention due to additional kernel launches. Don't focus on the performance now; the intention of this task is to illustrate the tiling, blockwise softmax, and streaming logic, making the transition to writing CUDA kernels clearer.
+
 > **Important Typo in Paper\!**
 >
 > There is a well-known typo in Algorithm 1 of the original paper. Please refer to [this GitHub issue](https://github.com/Dao-AILab/flash-attention/issues/991) for the correction.
