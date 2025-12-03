@@ -1,10 +1,10 @@
-# CS 8803 GPU Project 4: Implementing a self-attention kernel in CUDA
+# FlashAttention LLM Inference with CUDA
 
 ## Introduction
 
 Large Language Models (LLMs) are being widely used across numerous applications. The key model architecture powering these LLMs is the Transformer, which relies on a fundamental component known as the self-attention operation.
 
-In this project, we will delve into the mechanics of how the attention operation works. The primary goal is to implement a highly optimized CUDA kernel for this operation, specifically targeting the FlashAttention algorithm.
+In this project, I implemented highly optimized CUDA kernels for the attention operation, specifically targeting the FlashAttention algorithm, along with a complete end-to-end LLM inference pipeline.
 
 ## Self-attention
 
@@ -141,13 +141,13 @@ For any future sessions after you log out and log back into PACE, you only need 
 source .venv/bin/activate
 ```
 
-## Tasks
+## Implementations
 
-### Task 1 (2 pts)
+### 1. PyTorch Multi-Head Attention (`pytorch_multihead_attention/`)
 
-Your first task is to implement a naive, non-optimized self-attention operation in PyTorch. This will help you become familiar with the multi-headed self-attention mechanism.
+I implemented a naive, non-optimized self-attention operation in PyTorch to understand the multi-headed self-attention mechanism.
 
-You will implement your algorithm in the `forward()` method of `attention.py`. You can then use the provided `test.py` script to compare your results with PyTorch's built-in `torch.nn.MultiheadAttention` to verify correctness.
+The implementation is in the `forward()` method of `attention.py`. The `test.py` script compares results with PyTorch's built-in `torch.nn.MultiheadAttention` to verify correctness.
 
 Here are the steps to follow:
 
@@ -166,21 +166,19 @@ Here are the steps to follow:
 
 6.  **Compute Output**: Compute the final output matrix $O$ by multiplying the softmax-normalized attention weights with the `V` (Value) tensor. We have already provided the code for transposing and concatenating the heads back into the final output shape.
 
-Once you have completed your implementation, please read through the test code in `test.py` to understand how it works. You can then run the test case from your terminal with the following command:
+Run the test:
 
 ```bash
-python -m task1.test
+python -m pytorch_multihead_attention.test
 ```
 
 ---
 
-### Task 2 (3 pts)
+### 2. CUDA Multi-Head Attention (`cuda_multihead_attention/`)
 
-In this task, you will implement a naive self-attention operation using a combination of PyTorch and your own custom **CUDA kernels**.
+I implemented a naive self-attention operation using a combination of PyTorch and custom **CUDA kernels**.
 
-While we will continue to use the PyTorch framework for high-level evaluation, the core computations will be replaced by your CUDA code. These kernels will be bound to Python, allowing them to be called directly from the `attention.py` script instead of using standard PyTorch tensor operations. Please examine the `forward()` method to understand how this Python-CUDA binding is structured.
-
-Your specific task is to complete the **`attention_kernel.cu`** file by implementing the following components.
+The core computations are implemented in CUDA and bound to Python, allowing them to be called directly from the `attention.py` script. The **`attention_kernel.cu`** file contains the following components:
 
 Steps to Follow:
 
@@ -208,39 +206,22 @@ Steps to Follow:
 
     It is your responsibility to choose the correct block size, grid size, and tile size (`TILE_SIZE`) for all kernel launches. If you are unsure about the launch configuration, study the testing functions in `test.py` for guidance.
 
-To test your code, you must first compile the CUDA kernels. The provided script handles the PyTorch C++ extension building process.
+Compile and test:
 
 ```bash
-# Compile the CUDA kernels
-python -m task2.compile 
+python -m cuda_multihead_attention.compile 
+python -m cuda_multihead_attention.test --softmax
+python -m cuda_multihead_attention.test --gemm
+python -m cuda_multihead_attention.test --attention
 ```
-
-After a successful compilation, you can test your individual kernels to isolate any issues:
-
-```bash
-# Test only the batched softmax kernel
-python -m task2.test --softmax
-
-# Test only the batched GEMM kernels
-python -m task2.test --gemm
-```
-
-Once your individual kernels are passing, you can test the full end-to-end attention kernel.
-
-```bash
-# Test the complete custom attention implementation
-python -m task2.test --attention
-```
-
-**Note:** This CUDA implementation in Task 2 still involves multiple separate kernel calls (GEMM, scale/mask, softmax, GEMM). Because each kernel launch has overhead, we are not expecting to see significant performance benefits over PyTorch just yet.
 
 ---
 
-### Task 3 (3 pts)
+### 3. PyTorch FlashAttention (`pytorch_flash_attention/`)
 
-Now, you will implement the **FlashAttention 2** algorithm in PyTorch. This task is similar in spirit to Task 1 (as it's a PyTorch-only implementation), but the logic is significantly more complex. Your goal here is to understand and implement the attention operation in a **tiled manner**, which is the key to its efficiency.
+I implemented the **FlashAttention 2** algorithm in PyTorch. The attention operation is computed in a **tiled manner**, which is key to its memory efficiency.
 
-Your implementation must follow **Algorithm 1** from the paper "[FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning](https://arxiv.org/abs/2307.08691)" by Tri Dao.
+The implementation follows **Algorithm 1** from the paper "[FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning](https://arxiv.org/abs/2307.08691)" by Tri Dao.
 
 Here are a few notes about the Algorithm:
 
@@ -263,45 +244,32 @@ Here are a few notes about the Algorithm:
   * For $\mathrm{diag}(v)A$, you can use: `A * v.unsqueeze(-1)`
   * Similarly, for $\mathrm{diag}(v)^{-1}A$, you can use: `A / v.unsqueeze(-1)`
 
-To test the functionality of your implementation, run the following command:
+Run the test:
 
 ```bash
-python -m task3.test
+python -m pytorch_flash_attention.test
 ```
 
 ---
 
-### Task 4 (4 pts)
+### 4. CUDA FlashAttention (`cuda_flash_attention/`)
 
-This is the final and most important task. You will now implement the full **FlashAttention** algorithm in PyTorch + CUDA.
+I implemented the full **FlashAttention** algorithm in CUDA. This fused kernel performs the entire attention computation (GEMMs, masking, softmax, and output GEMM) in one pass, using tiling to avoid materializing the large $N \times N$ matrices in global memory.
 
-Your goal is to translate the tiled logic you developed in Task 3 (the PyTorch FlashAttention-2 algorithm) into a single, high-performance CUDA kernel. This fused kernel will perform the entire attention computation (GEMMs, masking, softmax, and output GEMM) in one pass, using tiling to avoid materializing the large $N \times N$ matrices in global memory.
+The kernel uses shared memory to store blocks of Q, K, and V with tuned tile sizes (`B_r` and `B_c`) for optimal performance.
 
-You must use the pre-defined shared memory arrays to store blocks of Q, K, and V. You can assume for your implementation that the maximum `head_dim` will be 128.
-
-A critical part of this task is performance tuning. In the `custom_flash_attention()` host function, you must experiment with and **tune the tile sizes** (`B_r` and `B_c`, the block sizes for rows and columns) to find the configuration that achieves the best performance on your GPU.
-
-**Testing Your Kernel**: First, compile your new CUDA kernel with the following command.
+Compile and test:
 
 ```bash
-python -m task4.compile
+python -m cuda_flash_attention.compile
+python -m cuda_flash_attention.test
 ```
-
-Then, run the test and benchmarking script:
-
-```bash
-python -m task4.test
-```
-
-The test code will verify the correctness of your output and then compare the performance of your custom FlashAttention kernel against the naive `torch.nn.MultiheadAttention` implementation.
-
-**Reporting Your Results**: The score for this project will be based on the performance difference you achieve. **You must report the 4 speedup numbers** from the test script in the `Results.md` file.
 
 ---
 
-### Task 5 (4 pts)
+### 5. CUDA KV Cache Decode (`cuda_kv_cache_decode/`)
 
-This task focuses on the second phase of LLM inference: **token generation (decode)**, and how to optimize it using a **KV Cache**.
+This implementation focuses on **token generation (decode)** phase optimization using a **KV Cache**.
 
 **How LLMs Generate New Tokens**
 
@@ -345,93 +313,55 @@ After implementing both kernels, you will be able to run `test.py`. This test wi
 
 Again, try **tuning the tile size** (`B_r` and `B_c`) in your decode kernel for the best performance. Be aware that a tile size that is too large may blow up the shared memory.
 
-**Compile and run the test:**
+Compile and test:
 
 ```bash
-python -m task5.compile
+python -m cuda_kv_cache_decode.compile
+python -m cuda_kv_cache_decode.test
 ```
-
-```bash
-python -m task5.test
-```
-
-The test script will compare the performance of your decode kernel. **Please report the speedup numbers in `Results.md`**.
-
-**(Optional) Optimizing the Decode Kernel**
-
-Explore performance improvements to the decode stage by implementing a chunked FlashAttention kernel, as described in Stanford CRFM’s FlashDecoding article ([link](https://crfm.stanford.edu/2023/10/12/flashdecoding.html)). Compare its performance against the baseline decode kernel to quantify potential speedups.
 
 ---
 
-### Task 6 (3 pts)
+### 6. LLM Inference Pipeline (`llm_inference/`)
 
-This final task brings all your work together. You will now implement an **end-to-end LLM inference pipeline** on a dummy LLM.
+This brings all the work together into an **end-to-end LLM inference pipeline**.
 
-Your objective is to fill in the `forward()` method of the `customAttention` class. This single function must now be able to intelligently handle *both* the prefill and decode phases of inference.
+The `forward()` method of the `customAttention` class intelligently handles both the prefill and decode phases:
 
-Specifically, your `forward()` method must:
+1.  **Prefill Phase:** Calls the FlashAttention kernel to process the full prompt.
+2.  **Decode Phase:** Calls the specialized decode kernel with KV cache.
+3.  **Cache Management:** Updates the KV cache with newly computed K and V vectors.
 
-1.  **Detect the Prefill Phase:** If the model detects the prefill phase, it must call your optimized **Task 4 FlashAttention kernel** to process the full prompt.
-2.  **Detect the Decode Phase:** If the model detects the decode phase, it must call your specialized **Task 5 decode kernel**, using the provided KV cache.
-3.  **Manage the Cache:** On decode phase, it must correctly call your `update_kv_cache` (from Task 5) to append the newly computed K and V vectors to the cache, making them available for the *next* decode step. On prefill phase, it must store the current K and V vectors into the cache for future uses.
-
-**Testing and Reporting**
-
-The test script for this task simulates a full generative inference loop with generating 100 tokens:
+Run the test:
 
 ```bash
-python -m task6.test
+python -m llm_inference.test
 ```
-
-This test will measure two key performance metrics:
-
-  * **TTFT (Time To First Token):** This measures the performance of your **prefill kernel (Task 4)**.
-  * **TBT (Time Between Tokens):** This measures the average performance of your **decode kernel (Task 5)** over many steps.
-
-**Please report the final TTFT and TBT times in `Results.md`**.
 
 ---
 
-### Task 7 (1 pts)
+### 7. GPT-2 Inference Demo (`gpt2_inference_demo/`)
 
-This final task is a demo to see your kernels working in a **real end-to-end LLM inference pipeline** with a Hugging Face model. You will see your custom attention kernel generating real tokens\!
+This demo shows the custom kernels working in a **real end-to-end LLM inference pipeline** with a Hugging Face GPT-2 model.
 
-We (or the "cursor") have provided all the code for you, which attaches your **prefill (Task 4)** and **decode (Task 5)** kernels to a GPT-2 model. There is nothing new for you to code.
-
-Your only job here is to run the model and verify that it works correctly. Make sure that your LLM is generating something useful and coherent. **If it generates random, noisy tokens,** it means your attention kernel has a bug. You will need to go back and debug your CUDA implementations from Tasks 4 and 5.
-
-**Running the Demo**
-
-To run the inference with *your* custom kernels:
+Run inference with custom kernels:
 
 ```bash
-python -m task7.inference
+python -m gpt2_inference_demo.inference
 ```
 
-**Please report the Generated text in `Results.md`**.
-
-**Verifying Correctness**
-
-You might observe that the GPT-2 model generates sentences that are not factually correct. This is expected, as GPT-2 is an older model.
-
-The important thing is to check if *your* model's "intelligence" matches the *original* GPT-2. To do this, you can run the reference implementation, which uses the standard Hugging Face attention:
+Run reference implementation for comparison:
 
 ```bash
-python -m task7.inference_ref
+python -m gpt2_inference_demo.inference_ref
 ```
 
-Please check whether you think the two models are "equally intelligent." If your model (`task7.inference`) seems significantly dumber or produces nonsensical garbage compared to the reference, go back and check your kernel implementations for bugs.
+## Results
 
-## Submissions
-
-We are still finalizing the official code collection process for submission.
-
-For all current beta testers, please **upload your completed `Results.md` file directly to the class Teams channel**. We appreciate your help in testing this assignment.
-
-Furthermore, please feel free to make any pull requests to this repository to update the content of this README file. If you find any discrepancies, or if you think additional materials would be helpful for future students, your contributions are welcome.
+See `Results.md` for performance benchmarks and speedup numbers.
 
 ---
 
-### Credits
+### Acknowledgments
 
-Euijun Chung (echung67@gatech.edu)
+Based on CS 8803 GPU course project by Euijun Chung (echung67@gatech.edu)
