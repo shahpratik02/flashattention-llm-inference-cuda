@@ -46,9 +46,6 @@ class CustomFlashAttention(torch.nn.Module):
         # Output and streaming softmax accumulators
         o = torch.zeros(batch_size * self.num_heads, seq_len, self.head_dim, device="cuda", dtype=torch.float)
 
-        ##############################################################
-
-        # TODO: Implement the FlashAttention implementation
         scale = 1.0 / math.sqrt(self.head_dim)
     
         # Number of blocks
@@ -80,14 +77,14 @@ class CustomFlashAttention(torch.nn.Module):
                     causal_mask = causal_mask.unsqueeze(0)
                     S_ij = S_ij.masked_fill(~causal_mask, -torch.inf)
                     
-                m_i_new=torch.maximum(m_i, S_ij.max(dim=-1).values)# (BH, Tr) and (BH, Tr) -> (BH, Tr)
+                m_i_new=torch.maximum(m_i, S_ij.max(dim=-1).values)# (BH, Tr) and (BH, Tr) to (BH, Tr)
                 P_ij = torch.exp(S_ij - m_i_new.unsqueeze(-1))# (BH, Tr, Tc) broadcast
                 l_i_new = torch.exp(m_i - m_i_new) * l_i + P_ij.sum(dim=-1)
                 correction_factor = torch.exp(m_i - m_i_new)
-                correction_factor_expanded = correction_factor.unsqueeze(-1)  # (BH, Tr) -> (BH, Tr, 1)
-                O_i_rescaled = O_i * correction_factor_expanded         # (BH, Tr, d) * (BH, Tr, 1) -> (BH, Tr, d)  [broadcast]
-                P_times_V = torch.matmul(P_ij, V_j)                     # (BH, Tr, Tc) @ (BH, Tc, d) -> (BH, Tr, d)
-                O_i = O_i_rescaled + P_times_V                          # (BH, Tr, d) + (BH, Tr, d) -> (BH, Tr, d)
+                correction_factor_expanded = correction_factor.unsqueeze(-1)  # (BH, Tr) to (BH, Tr, 1)
+                O_i_rescaled = O_i * correction_factor_expanded         # (BH, Tr, d) * (BH, Tr, 1) to (BH, Tr, d)  [broadcast]
+                P_times_V = torch.matmul(P_ij, V_j)                     # (BH, Tr, Tc) @ (BH, Tc, d) to (BH, Tr, d)
+                O_i = O_i_rescaled + P_times_V                          # (BH, Tr, d) + (BH, Tr, d) to(BH, Tr, d)
                 m_i = m_i_new
                 l_i = l_i_new
 
@@ -97,9 +94,8 @@ class CustomFlashAttention(torch.nn.Module):
 
 
 
-        ##############################################################
-
-        # Reshape back to (batch_size, seq_len, hidden_dim)
+       
+        # Reshape back (batch_size, seq_len, hidden_dim)
         o = o.view(batch_size, self.num_heads, seq_len, self.head_dim).permute(0, 2, 1, 3).reshape(batch_size, seq_len, self.hidden_dim)
         
         return o
@@ -115,13 +111,11 @@ class CustomFlashAttention(torch.nn.Module):
             Output tensor of shape (batch_size, seq_len, hidden_dim)
         '''
     
-        # Obtain the query, key, and value tensors
         q = x @ self.w_q.T
         k = x @ self.w_k.T
         v = x @ self.w_v.T
 
         o = self._flash_attention(q, k, v, causal=causal)
 
-        # Apply output projection
         o = o @ self.w_o.T
         return o

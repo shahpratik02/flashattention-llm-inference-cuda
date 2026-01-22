@@ -26,7 +26,6 @@ __global__ void flashattention_kernel(
     __shared__ float scores[B_r][B_c];
     __shared__ float p[B_r][B_c];
 
-    // ########################################################
     int bh_idx=blockIdx.x; //as the first dimension of grid is batch_size * num_heads
     int q_block_idx=blockIdx.y; //as the second dimension of grid is number of q blocks
     int tid=threadIdx.x;
@@ -160,7 +159,7 @@ __global__ void flashattention_kernel(
 
 
 
-    // ########################################################
+
 }
 
 torch::Tensor custom_flash_attention(torch::Tensor q, torch::Tensor k, torch::Tensor v, int num_heads, bool causal) {
@@ -187,7 +186,6 @@ torch::Tensor custom_flash_attention(torch::Tensor q, torch::Tensor k, torch::Te
     
     auto out_bh = torch::zeros_like(q_bh, options);
     
-    // ########################################################
     
     const int B_r = 16;  // Query tile size (rows)
     // const int B_c = 16;  // KV tile size (columns)
@@ -209,7 +207,6 @@ torch::Tensor custom_flash_attention(torch::Tensor q, torch::Tensor k, torch::Te
         head_dim,
         causal
     );
-    // ########################################################
 
     // Check for errors
     cudaError_t err = cudaGetLastError();
