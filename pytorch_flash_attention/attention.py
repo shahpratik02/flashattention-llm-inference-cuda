@@ -77,7 +77,7 @@ class CustomFlashAttention(torch.nn.Module):
                     causal_mask = causal_mask.unsqueeze(0)
                     S_ij = S_ij.masked_fill(~causal_mask, -torch.inf)
                     
-                m_i_new=torch.maximum(m_i, S_ij.max(dim=-1).values)# (BH, Tr) and (BH, Tr) to (BH, Tr)
+                m_i_new=torch.maximum(m_i, S_ij.max(dim=-1).values)# (BH, Tr)
                 P_ij = torch.exp(S_ij - m_i_new.unsqueeze(-1))# (BH, Tr, Tc) broadcast
                 l_i_new = torch.exp(m_i - m_i_new) * l_i + P_ij.sum(dim=-1)
                 correction_factor = torch.exp(m_i - m_i_new)
