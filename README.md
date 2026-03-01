@@ -2,6 +2,101 @@
 
 End-to-end LLM inference engine with custom CUDA FlashAttention kernels, tiled GEMM operations, online softmax, KV caching, and optimized prefill/decode pipelines.
 
+## Setup
+
+### Prerequisites
+
+- Python 3.12+
+- CUDA-capable GPU (Compute Capability 7.0+)
+- NVCC compiler
+- **IMPORTANT:** PyTorch and CUDA versions must match
+
+### Installation
+
+```bash
+# Create and activate virtual environment with uv
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
+uv pip install torch transformers numpy triton
+```
+
+### CUDA Compatibility
+
+**Critical:** The CUDA version used to compile kernels must match the CUDA version PyTorch was built with.
+
+**Check your versions:**
+```bash
+# Check PyTorch CUDA version
+python -c "import torch; print(f'PyTorch CUDA: {torch.version.cuda}')"
+
+# Check system CUDA version
+nvcc --version
+```
+
+**If versions don't match:**
+
+**On HPC clusters (using modules):**
+```bash
+# Check available CUDA versions
+module avail cuda
+
+# Load matching version (e.g., if PyTorch uses CUDA 12.8, load cuda/12.6.1 or cuda/12.1.1)
+module unload cuda
+module load cuda/12.6.1  # Use closest 12.x version
+
+# Verify
+nvcc --version
+```
+
+**On local machines:**
+```bash
+# Option 1: Reinstall PyTorch to match your CUDA version
+pip uninstall torch torchvision torchaudio
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121  # Match your CUDA version
+
+# Option 2: Install matching CUDA toolkit
+# Download from: https://developer.nvidia.com/cuda-downloads
+```
+
+### Compile CUDA Kernels
+
+```bash
+# Clean previous builds (if any)
+rm -rf cuda_flash_attention/cuda/build
+rm -rf cuda_kv_cache_decode/cuda/build
+rm -rf cuda_multihead_attention/cuda/build
+
+# Compile all CUDA kernels
+python -m cuda_flash_attention.compile
+python -m cuda_kv_cache_decode.compile
+python -m cuda_multihead_attention.compile
+```
+
+## Profiling (PyTorch Profiler)
+
+Use the built-in profiler script to generate per-op timing tables and Chrome traces.
+
+```bash
+# Run profiler + comparison traces
+python -m profiling.pytorch_profiler.profile_flash_attention
+```
+
+Generated outputs are saved in `profiling/pytorch_profiler/results/`:
+- `flash_attention_trace.json` (detailed run)
+- `trace_flashattention_cuda.json` (custom kernel path)
+- `trace_pytorch_native.json` (PyTorch native path)
+
+To visualize traces in Chrome:
+1. Open `chrome://tracing`
+2. Click **Load**
+3. Select one of the JSON trace files above
+4. For comparison, open `trace_flashattention_cuda.json` and `trace_pytorch_native.json` in separate tabs/windows
+
+**Current profiling takeaway:** Our custom FlashAttention kernel appears faster than PyTorch’s corresponding attention region for this configuration, while end-to-end layer speed is currently near parity due to surrounding overheads.
+
+
 ## Introduction
 
 Large Language Models (LLMs) rely on the Transformer architecture, which uses self-attention as its fundamental operation. In this project, I implemented highly optimized CUDA kernels for attention computation, specifically targeting the FlashAttention algorithm, along with a complete end-to-end LLM inference pipeline.
